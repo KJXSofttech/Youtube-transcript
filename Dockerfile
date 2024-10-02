@@ -51,14 +51,14 @@ RUN ln -s /usr/local/bin/chromedriver-linux64/chromedriver /usr/local/bin/chrome
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+# Copy the user_agents.txt file
+COPY user_agents.txt /app/
+
 # Copy the application code
 COPY . .
 
 # Expose port 5000 for Flask
 EXPOSE 5000
 
-# Define environment variable for Chrome to run headless
-ENV DISPLAY=:99
-
-# Run app.py when the container launches
-CMD ["python", "app.py"]
+# Run app.py when the container launches using gunicorn
+CMD ["gunicorn", "--bind", "0.0.0.0:5000", "app:app"]
