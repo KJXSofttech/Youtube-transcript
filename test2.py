@@ -14,7 +14,7 @@ options = Options()
 driver = webdriver.Chrome(service=service, options=options)
 
 # Open the Naukri job listing page
-url = "https://www.naukri.com/Data-scientist-jobs-in-Mumbai?experience=5"
+url = "https://www.naukri.com/Dancer-jobs-in-bangalore?experience=3"
 driver.get(url)
 
 # Wait for the page to load
@@ -41,57 +41,69 @@ for job in jobs:
         skills_elements = job.find_elements(By.CSS_SELECTOR, 'ul.tags-gt li')
         skills = [skill.text for skill in skills_elements]
         posting_date = job.find_element(By.CSS_SELECTOR, 'span.job-post-day').text
-        job_link = job.find_element(By.CSS_SELECTOR, 'a.title').get_attribute('href')
 
         # Click on the job card to open the detailed view
+        job_link = job.find_element(By.CSS_SELECTOR, 'a.title').get_attribute('href')
         driver.execute_script("window.open(arguments[0], '_blank');", job_link)
         driver.switch_to.window(driver.window_handles[1])
         time.sleep(3)  # Wait for the detailed job page to load
 
-        # Extract additional details
-        role = industry_type = department = employment_type = role_category = education_ug = education_pg = key_skills = ""
-
-        try:
-            sections = driver.find_elements(By.CSS_SELECTOR, 'div.styles_details_Y424')
-            for section in sections:
-                try:
-                    label = section.find_element(By.CSS_SELECTOR, 'label').text.strip()
-                    value = section.find_element(By.CSS_SELECTOR, 'span').text.strip()
-
-                    if "Role" in label:
-                        role = value
-                    elif "Industry Type" in label:
-                        industry_type = value
-                    elif "Department" in label:
-                        department = value
-                    elif "Employment Type" in label:
-                        employment_type = value
-                    elif "Role Category" in label:
-                        role_category = value
-                    elif "UG" in label:
-                        education_ug = value
-                    elif "PG" in label:
-                        education_pg = value
-                except:
-                    continue
-
-        except Exception as e:
-            print(f"Error extracting additional details: {e}")
-
-        # Extract detailed job description
+        # Extract detailed job description and other sections
         try:
             job_desc_section = driver.find_element(By.CSS_SELECTOR, 'div.styles_JDC__dang-inner-html__h0K4t').text
         except:
             job_desc_section = "Not available"
 
+        try:
+            key_responsibilities_section = driver.find_element(By.XPATH, "//h2[contains(text(), 'Key Responsibilities')]/following-sibling::ul").text
+        except:
+            key_responsibilities_section = "Not available"
+
+        # Extract role and industry type
+        try:
+            role = driver.find_element(By.XPATH, "//label[contains(text(), 'Role')]/following-sibling::span/a").text
+        except:
+            role = "N/A"
+
+        try:
+            industry_type = driver.find_element(By.XPATH, "//label[contains(text(), 'Industry Type')]/following-sibling::span/a").text
+        except:
+            industry_type = "N/A"
+
+        try:
+            department = driver.find_element(By.XPATH, "//label[contains(text(), 'Department')]/following-sibling::span/a").text
+        except:
+            department = "N/A"
+
+        try:
+            employment_type = driver.find_element(By.XPATH, "//label[contains(text(), 'Employment Type')]/following-sibling::span").text
+        except:
+            employment_type = "N/A"
+
+        try:
+            role_category = driver.find_element(By.XPATH, "//label[contains(text(), 'Role Category')]/following-sibling::span").text
+        except:
+            role_category = "N/A"
+
+        # Extract education details
+        try:
+            education_ug = driver.find_element(By.XPATH, "//label[contains(text(), 'UG')]/following-sibling::span").text
+        except:
+            education_ug = "N/A"
+
+        try:
+            education_pg = driver.find_element(By.XPATH, "//label[contains(text(), 'PG')]/following-sibling::span").text
+        except:
+            education_pg = "N/A"
+
         # Extract key skills
         try:
             key_skills_elements = driver.find_elements(By.CSS_SELECTOR, 'div.styles_key-skill_GIPn_ a')
-            key_skills = ', '.join([skill.text for skill in key_skills_elements])
+            key_skills = [skill.text for skill in key_skills_elements]
         except:
-            key_skills = ""
+            key_skills = []
 
-        # Create job dictionary in the requested format
+        # Create job dictionary with complete details
         job_data = {
             "Job Title": job_title,
             "Company Name": company_name,
@@ -102,20 +114,16 @@ for job in jobs:
             "Job Description (Summary)": job_description_summary,
             "Skills": skills,
             "Posting Date": posting_date,
-            "Job Link": job_link,
-            "Job Details": {
-                "Job Description": job_desc_section,
-                "Role": role,
-                "Industry Type": industry_type,
-                "Department": department,
-                "Employment Type": employment_type,
-                "Role Category": role_category,
-                "Education": {
-                    "UG": education_ug,
-                    "PG": education_pg
-                },
-                "Key Skills": key_skills
-            }
+            "Job Description (Detailed)": job_desc_section,
+            "Key Responsibilities": key_responsibilities_section,
+            "Role": role,
+            "Industry Type": industry_type,
+            "Department": department,
+            "Employment Type": employment_type,
+            "Role Category": role_category,
+            "Education (UG)": education_ug,
+            "Education (PG)": education_pg,
+            "Key Skills": key_skills
         }
 
         # Add the job data to the list
