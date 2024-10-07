@@ -29,7 +29,7 @@ job_data_list = []
 # Iterate over each job listing
 for job in jobs:
     try:
-        # Extract job details
+        # Extract basic details from job card
         job_title = job.find_element(By.CSS_SELECTOR, 'a.title').text
         company_name = job.find_element(By.CSS_SELECTOR, 'a.comp-name').text
         rating_element = job.find_elements(By.CSS_SELECTOR, 'a.rating')
@@ -37,12 +37,59 @@ for job in jobs:
         experience = job.find_element(By.CSS_SELECTOR, 'span.expwdth').text
         salary = job.find_element(By.CSS_SELECTOR, 'span.sal').text
         location = job.find_element(By.CSS_SELECTOR, 'span.locWdth').text
-        job_description = job.find_element(By.CSS_SELECTOR, 'span.job-desc').text
+        job_description_summary = job.find_element(By.CSS_SELECTOR, 'span.job-desc').text
         skills_elements = job.find_elements(By.CSS_SELECTOR, 'ul.tags-gt li')
         skills = [skill.text for skill in skills_elements]
         posting_date = job.find_element(By.CSS_SELECTOR, 'span.job-post-day').text
 
-        # Create job dictionary
+        # Click on the job card to open detailed view
+        job_link = job.find_element(By.CSS_SELECTOR, 'a.title').get_attribute('href')
+        driver.execute_script("window.open(arguments[0], '_blank');", job_link)
+        driver.switch_to.window(driver.window_handles[1])
+        time.sleep(3)  # Wait for the detailed job page to load
+
+        # Extract details from the job description page
+        try:
+            job_desc_section = driver.find_element(By.CSS_SELECTOR, 'div.styles_JDC_dang-inner-html_h0K4t').text
+        except:
+            job_desc_section = "Not available"
+
+        try:
+            role = driver.find_element(By.CSS_SELECTOR, 'a[href*="back-end-developer-jobs"]').text
+        except:
+            role = "N/A"
+
+        try:
+            industry_type = driver.find_element(By.XPATH, "//label[contains(text(), 'Industry Type')]/following-sibling::span").text
+        except:
+            industry_type = "N/A"
+
+        try:
+            employment_type = driver.find_element(By.XPATH, "//label[contains(text(), 'Employment Type')]/following-sibling::span").text
+        except:
+            employment_type = "N/A"
+
+        try:
+            role_category = driver.find_element(By.XPATH, "//label[contains(text(), 'Role Category')]/following-sibling::span").text
+        except:
+            role_category = "N/A"
+
+        try:
+            education = driver.find_element(By.XPATH, "//label[contains(text(), 'Education')]/following-sibling::span").text
+        except:
+            education = "N/A"
+
+        try:
+            functional_area = driver.find_element(By.XPATH, "//label[contains(text(), 'Functional Area')]/following-sibling::span").text
+        except:
+            functional_area = "N/A"
+
+        try:
+            key_skills = driver.find_element(By.XPATH, "//label[contains(text(), 'Key Skills')]/following-sibling::span").text
+        except:
+            key_skills = "N/A"
+
+        # Create job dictionary with complete details
         job_data = {
             "Job Title": job_title,
             "Company Name": company_name,
@@ -50,14 +97,27 @@ for job in jobs:
             "Experience": experience,
             "Salary": salary,
             "Location": location,
-            "Job Description": job_description,
+            "Job Description (Summary)": job_description_summary,
             "Skills": skills,
-            "Posting Date": posting_date
+            "Posting Date": posting_date,
+            "Job Description (Detailed)": job_desc_section,
+            "Role": role,
+            "Industry Type": industry_type,
+            "Employment Type": employment_type,
+            "Role Category": role_category,
+            "Education": education,
+            "Functional Area": functional_area,
+            "Key Skills": key_skills
         }
 
         # Add the job data to the list
         job_data_list.append(job_data)
-    
+
+        # Close the detailed job tab and switch back to the listing tab
+        driver.close()
+        driver.switch_to.window(driver.window_handles[0])
+        time.sleep(2)  # Wait before continuing
+
     except Exception as e:
         print(f"Error extracting data for a job: {e}")
 
